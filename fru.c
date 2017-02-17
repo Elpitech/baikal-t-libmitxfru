@@ -11,7 +11,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "common.h"
-#define msg(...) {fprintf (logfile, __VA_ARGS__); }
 
 #ifdef DEBUG
 #define dbg(...) {fprintf (logfile, __VA_ARGS__); }
@@ -344,7 +343,7 @@ fru_mrec_update_mac(struct fru *f, uint8_t *mac) {
   memcpy(f->mac, mac, 6);
   for (; i<f->mrec_count; i++) {
     if (f->mrec[i].type == MR_MAC_REC) {
-      memcpy(f->mrec[i].data, mac, 6);
+      f->mrec[i].data = f->mac;
       return 0;
     }
   }
@@ -358,12 +357,16 @@ fru_mrec_update_bootdevice(struct fru *f, uint8_t *bootdevice) {
   len = (len>FRU_STR_MAX?FRU_STR_MAX:len);
   memset(f->bootdevice, 0, FRU_STR_MAX);
   memcpy(f->bootdevice, bootdevice, (len>FRU_STR_MAX?FRU_STR_MAX:len));
+  log("Checking if bootdev mrec already exists\n");
   for (; i<f->mrec_count; i++) {
     if (f->mrec[i].type == MR_SATADEV_REC) {
-      memcpy(f->mrec[i].data, f->bootdevice, len);
+      log("Found bootdev mrec, updating\n");
+      f->mrec[i].data = f->bootdevice;
+      f->mrec[i].length = len;
       return 0;
     }
   }
+  log("Bootdev mrec not found, creating mrec %i\n", f->mrec_count);
   //no mrec for sata found, creating one
   struct multirec *m = &(f->mrec[f->mrec_count]);
   m->type = MR_SATADEV_REC;
