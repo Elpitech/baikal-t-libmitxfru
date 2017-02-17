@@ -33,6 +33,7 @@ struct multirec {
 struct fru {
   uint8_t mac[6];
   uint8_t mfg_date[3];
+  uint8_t bootdevice[16];
   unsigned int board_area_offset;
   unsigned int product_area_offset;
   unsigned int mrec_area_offset;  

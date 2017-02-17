@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "common.h"
+#define msg(...) {fprintf (logfile, __VA_ARGS__); }
 #else
 #include <common.h>
 #include <i2c.h>
@@ -143,7 +144,7 @@ parse_board_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   offt = read_fru_str(buf, f->val_part_number, &f->len_part_number, offt);
   offt = read_fru_str(buf, f->val_fru_id, &f->len_fru_id, offt);
 #ifdef DEBUG
-  print_board_area();
+  print_board_area(&fru);
 #endif
   return 0;
 }
@@ -195,7 +196,7 @@ parse_product_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   offt = read_fru_str(buf, f->val_p_serial_number, &f->len_p_serial_number, offt);
   offt = read_fru_str(buf, f->val_p_fru_id, &f->len_p_fru_id, offt);
 #ifdef DEBUG
-  print_product_area();
+  print_product_area(&fru);
 #endif
   return 0;
 }
