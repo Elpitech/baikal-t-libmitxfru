@@ -12,6 +12,13 @@
 #include <stdio.h>
 #include "common.h"
 #define msg(...) {fprintf (logfile, __VA_ARGS__); }
+
+#ifdef DEBUG
+#define dbg(...) {fprintf (logfile, __VA_ARGS__); }
+#else
+#define dbg(...)
+#endif
+
 #else
 #include <common.h>
 #include <i2c.h>
@@ -20,13 +27,14 @@
 #define warn(...) {printf ("W["TAG"]: "__VA_ARGS__); }
 #define err(...) {printf ("E["TAG"]: "__VA_ARGS__); }
 
-#endif
-
 #ifdef DEBUG
 #define dbg(...) {printf (__VA_ARGS__); }
 #else
 #define dbg(...)
 #endif
+
+#endif
+
 
 static uint8_t fru_buf[FRU_SIZE];
 static uint8_t fru_buf2[FRU_SIZE];
@@ -330,6 +338,43 @@ fru_mk_multirecords_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   return 0;
 }
 
+int
+fru_mrec_update_mac(struct fru *f, uint8_t *mac) {
+  int i = 0;
+  memcpy(f->mac, mac, 6);
+  for (; i<f->mrec_count; i++) {
+    if (f->mrec[i].type == MR_MAC_REC) {
+      memcpy(f->mrec[i].data, mac, 6);
+      return 0;
+    }
+  }
+  return -1;
+}
+
+int
+fru_mrec_update_bootdevice(struct fru *f, uint8_t *bootdevice) {
+  int i = 0;
+  int len = strlen(bootdevice);
+  len = (len>FRU_STR_MAX?FRU_STR_MAX:len);
+  memset(f->bootdevice, 0, FRU_STR_MAX);
+  memcpy(f->bootdevice, bootdevice, (len>FRU_STR_MAX?FRU_STR_MAX:len));
+  for (; i<f->mrec_count; i++) {
+    if (f->mrec[i].type == MR_SATADEV_REC) {
+      memcpy(f->mrec[i].data, f->bootdevice, len);
+      return 0;
+    }
+  }
+  //no mrec for sata found, creating one
+  struct multirec *m = &(f->mrec[f->mrec_count]);
+  m->type = MR_SATADEV_REC;
+  m->format = 2;
+  m->end = true;
+  m->length = len;
+  m->data = f->bootdevice;
+  f->mrec_count ++;
+  return -1;
+}
+
 #ifdef RECOVERY
 int
 fru_open_parse(void) {
@@ -349,11 +394,40 @@ fru_open_parse(void) {
       memcpy(fru.mac, fru.mrec[i].data, 6);
       dbg("FRU: found MAC mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac[0], fru.mac[1], fru.mac[2], fru.mac[3], fru.mac[4], fru.mac[5]);
       break;
+    } else if (fru.mrec[i].type == MR_SATADEV_REC) {
+      memset(fru.bootdevice, 0, FRU_STR_MAX);
+      memcpy(fru.bootdevice, fru.mrec[i].data, (fru.mrec[i].length>FRU_STR_MAX?FRU_STR_MAX:fru.mrec[i].length));
+      dbg("FRU: found SATA boot device [%s]\n", fru.bootdevice);
     }
   }
   fclose(f);
   return 0;
 }
+
+int
+fru_update_mrec_eeprom(void) {
+  int i = 0;
+  int ret = 0;
+  FILE *f = NULL;
+  memcpy(fru_buf2, fru_buf, fru.mrec_area_offset);
+  dbg("Put multirecord area at %i\n", fru.mrec_area_offset);
+  ret = fru_mk_multirecords_area(&fru, fru_buf2+fru.mrec_area_offset, FRU_SIZE-fru.mrec_area_offset);
+  if (ret < 0) {
+    return -1;
+  }
+  log("Writing eeprom ");
+  f = fopen("/sys/bus/i2c/devices/1-0053/eeprom", "w");
+  if (f == NULL) {
+    err("FRU: failed to open eeprom\n");
+    return -1;
+  }
+  ret = fwrite(fru_buf2, sizeof(uint8_t), FRU_SIZE, f);
+  dbg("Wrote %i bytes\n", ret);
+  fclose(f);
+  return 0;
+}
+
+
 #else
 int
 fru_open_parse(void) {
@@ -395,8 +469,6 @@ fru_open_parse(void) {
   return 0;
 }
 
-#define NTOHS(a) (((a>>8)&0xff) | ((a<<8)&0xff00))
-
 int
 fru_update_mrec_eeprom(void) {
   int i = 0;
@@ -437,18 +509,5 @@ fru_update_mrec_eeprom(void) {
   }
   msg("\n");
   return 0;
-}
-
-int
-fru_update_mac(uint8_t *mac) {
-  int i = 0;
-  memcpy(fru.mac, mac, 6);
-  for (; i<fru.mrec_count; i++) {
-    if (fru.mrec[i].type == MR_MAC_REC) {
-      memcpy(fru.mrec[i].data, mac, 6);
-      return 0;
-    }
-  }
-  return -1;
 }
 #endif

@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 #define MR_MAC_REC 0xC0
-#define MR_UBOOT_REC 0xC1
+#define MR_SATADEV_REC 0xC1
 
 #define FRU_ADDR 0xa6
 #define FRU_PAGE_SIZE 32
@@ -33,10 +33,10 @@ struct multirec {
 struct fru {
   uint8_t mac[6];
   uint8_t mfg_date[3];
-  uint8_t bootdevice[16];
+  uint8_t bootdevice[FRU_STR_MAX];
   unsigned int board_area_offset;
   unsigned int product_area_offset;
-  unsigned int mrec_area_offset;  
+  unsigned int mrec_area_offset;
   FRU_STR(mfg_name, FRU_STR_MAX);
   FRU_STR(product_name, FRU_STR_MAX);
   FRU_STR(serial_number, FRU_STR_MAX);
@@ -59,5 +59,8 @@ int fru_update_mac(uint8_t *mac);
 int fru_update_mrec_eeprom(void);
 void print_board_area(struct fru *f);
 void print_product_area(struct fru *f);
+
+#ifdef RECOVERY
+#endif
 
 #endif/*__FRU_H__*/
