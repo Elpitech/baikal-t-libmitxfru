@@ -19,6 +19,7 @@
 #endif
 
 #else
+#define DEBUG
 #include <common.h>
 #include <i2c.h>
 #define msg(...) {printf (__VA_ARGS__); }
@@ -226,6 +227,17 @@ fru_parse_multirecord(struct multirec *m, uint8_t *buf, unsigned int buf_len) {
     warn("FRU: no space in multirecord buffer, failed to parse header\n");
     return -4;
   }
+#ifdef DEBUG
+  {
+    int i = 0;
+    log("FRU mrec header bin:\n");
+    for (;i<5;i++) {
+      msg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
+    }
+    msg("\n");
+  }
+#endif
+
   if (calc_cs(buf, 5) != 0) {
     warn("FRU: multirecord header checksum is invalid\n");
     m->header_cs_ok = false;
@@ -302,7 +314,7 @@ parse_fru(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   }
   f->mrec_count = 0;
   offt = f->mrec_area_offset;
-  while (ret >= 0) {
+  while (ret >= 0 && (mrec_n < N_MULTIREC)) {
     dbg("FRU: parsing multirecord %i\n", f->mrec_count);
     ret = fru_parse_multirecord(&f->mrec[mrec_n], &buf[offt], buf_len-offt);
     if (ret > 0) {
@@ -314,8 +326,9 @@ parse_fru(struct fru *f, uint8_t *buf, unsigned int buf_len) {
     if (f->mrec[mrec_n].end) {
       break;
     } else {
-      offt = ret;
+      offt += ret;
     }
+    mrec_n ++;
   }
   return 0;
 }
@@ -466,7 +479,10 @@ fru_open_parse(void) {
     if (fru.mrec[i].type == MR_MAC_REC) {
       memcpy(fru.mac, fru.mrec[i].data, 6);
       dbg("FRU: found MAC mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac[0], fru.mac[1], fru.mac[2], fru.mac[3], fru.mac[4], fru.mac[5]);
-      break;
+    } else if (fru.mrec[i].type == MR_SATADEV_REC) {
+      memset(fru.bootdevice, 0, FRU_STR_MAX);
+      memcpy(fru.bootdevice, fru.mrec[i].data, (fru.mrec[i].length>FRU_STR_MAX?FRU_STR_MAX:fru.mrec[i].length));
+      dbg("FRU: found SATA boot device [%s]\n", fru.bootdevice);
     }
   }
   return 0;
