@@ -409,7 +409,6 @@ fru_open_parse(void) {
     if (fru.mrec[i].type == MR_MAC_REC) {
       memcpy(fru.mac, fru.mrec[i].data, 6);
       dbg("FRU: found MAC mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac[0], fru.mac[1], fru.mac[2], fru.mac[3], fru.mac[4], fru.mac[5]);
-      break;
     } else if (fru.mrec[i].type == MR_SATADEV_REC) {
       memset(fru.bootdevice, 0, FRU_STR_MAX);
       memcpy(fru.bootdevice, fru.mrec[i].data, (fru.mrec[i].length>FRU_STR_MAX?FRU_STR_MAX:fru.mrec[i].length));
