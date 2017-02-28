@@ -34,7 +34,6 @@
 
 #endif
 
-
 static uint8_t fru_buf[FRU_SIZE];
 static uint8_t fru_buf2[FRU_SIZE];
 struct fru fru;
@@ -64,10 +63,8 @@ int
 fru_mk_multirecord(uint8_t *buf, unsigned int buf_size, uint8_t record_type, bool end, uint8_t *record, uint8_t record_size) {
   int offt = 0;
   int i = 0;
-  int aligned_size = (record_size+7)/8;
-  int aligned_record_size = aligned_size*8;
-  aligned_size = 5+aligned_size*8;
-  int remainder = buf_size-aligned_size;
+  int size = 5+record_size;
+  int remainder = buf_size-size;
   log("packing multirecord");
 
   if (remainder<=0) {
@@ -75,26 +72,19 @@ fru_mk_multirecord(uint8_t *buf, unsigned int buf_size, uint8_t record_type, boo
   }
   buf[0] = record_type;
   buf[1] = (end ? (1<<7) : 0) | 0x02;
-  buf[2] = aligned_record_size/8;
+  buf[2] = record_size;
   memcpy((buf+5), record, record_size);
   offt = 5+record_size;
-  buf[offt] = 0;
-  log("end offt: %i", offt);
-  while (offt<aligned_size) {
-    log("adding byte %i(%i)", offt, (offt+1)%8);
-    buf[offt++] = 0;
-  }
-  log ("end offt: %i", offt);
-  buf[3] = 256-calc_cs(buf+5, aligned_record_size);
+  buf[3] = 256-calc_cs(buf+5, record_size);
   buf[4] = 256-calc_cs(buf, 5);
-  for (;i<aligned_size;i++) {
+  for (;i<size;i++) {
     if (i%8==0) {
       dbg("\r\n");
     }
     dbg("%02x[%c] ", buf[i], (buf[i]>=0x20 ? buf[i] : ' '));
   }
   dbg("\r\n");
-  return aligned_size;
+  return size;
 }
 
 int
@@ -252,7 +242,7 @@ fru_parse_multirecord(struct multirec *m, uint8_t *buf, unsigned int buf_len) {
   if (m->end) {
     dbg("FRU: last multirecord\n");
   }
-  m->length = buf[2]*8;
+  m->length = buf[2];
   if ((buf_len-5)<(m->length)) {
     warn("FRU: no space in multirecord buffer, failed check data\n");
     return -5;
@@ -498,7 +488,6 @@ fru_update_mrec_eeprom(void) {
   if (i2c_set_bus_num(CONFIG_SYS_OEM_BUS_NUM)) {
 		return -2;
   }
-
 
   for (i=0;i<FRU_SIZE;i+=32) {
     ret = i2c_write(CONFIG_SYS_OEM_I2C_ADDR, i, 2, fru_buf2+i, 32);
