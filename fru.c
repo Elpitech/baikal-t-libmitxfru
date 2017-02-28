@@ -12,14 +12,13 @@
 #include <stdio.h>
 #include "common.h"
 
-#ifdef DEBUG
+#ifdef FRU_DEBUG
 #define dbg(...) {fprintf (logfile, __VA_ARGS__); }
 #else
 #define dbg(...)
 #endif
 
 #else
-#define DEBUG
 #include <common.h>
 #include <i2c.h>
 #define msg(...) {printf (__VA_ARGS__); }
@@ -27,7 +26,7 @@
 #define warn(...) {printf ("W["TAG"]: "__VA_ARGS__); }
 #define err(...) {printf ("E["TAG"]: "__VA_ARGS__); }
 
-#ifdef DEBUG
+#ifdef FRU_DEBUG
 #define dbg(...) {printf (__VA_ARGS__); }
 #else
 #define dbg(...)
@@ -43,8 +42,6 @@ struct fru fru;
 #define MR_MAC_REC 0xC0
 #define MR_UBOOT_REC 0xC1
 
-//#define DEBUG
-
 uint8_t
 calc_cs(uint8_t *buf, uint8_t size) {
   uint8_t cs = 0;
@@ -52,7 +49,7 @@ calc_cs(uint8_t *buf, uint8_t size) {
   dbg("CS:\n");
   for (;i<size; i++) {
     cs += buf[i];
-#ifdef DEBUG
+#ifdef FRU_DEBUG
     if (i%8==0) {
       dbg("\n");
     }
@@ -92,11 +89,11 @@ fru_mk_multirecord(uint8_t *buf, unsigned int buf_size, uint8_t record_type, boo
   buf[4] = 256-calc_cs(buf, 5);
   for (;i<aligned_size;i++) {
     if (i%8==0) {
-      msg("\r\n");
+      dbg("\r\n");
     }
-    msg("%02x[%c] ", buf[i], (buf[i]>=0x20 ? buf[i] : ' '));
+    dbg("%02x[%c] ", buf[i], (buf[i]>=0x20 ? buf[i] : ' '));
   }
-  msg("\r\n");
+  dbg("\r\n");
   return aligned_size;
 }
 
@@ -122,17 +119,17 @@ parse_board_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
     warn("FRU: Board area size mismatch\n");
     return -2;
   }
-#ifdef DEBUG
+#ifdef FRU_DEBUG
   {
     int i = 0;
     log("FRU Board area bin:\n");
     for (;i<buf[1]*8;i++) {
       if ((i%8)==0) {
-        msg("\n");
+        dbg("\n");
       }
-      msg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
+      dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
     }
-    msg("\n");
+    dbg("\n");
   }
 #endif
 
@@ -151,7 +148,7 @@ parse_board_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   offt = read_fru_str(buf, f->val_serial_number, &f->len_serial_number, offt);
   offt = read_fru_str(buf, f->val_part_number, &f->len_part_number, offt);
   offt = read_fru_str(buf, f->val_fru_id, &f->len_fru_id, offt);
-#ifdef DEBUG
+#ifdef FRU_DEBUG
   print_board_area(&fru);
 #endif
   return 0;
@@ -178,17 +175,17 @@ parse_product_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
     warn("FRU: Product area size mismatch\n");
     return -2;
   }
-#ifdef DEBUG
+#ifdef FRU_DEBUG
   {
     int i = 0;
     log("FRU Product area bin:\n");
     for (i=0; i<buf[1]*8; i++) {
       if ((i%8)==0) {
-        msg("\n");
+        dbg("\n");
       }
-      msg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
+      dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
     }
-    msg("\n");
+    dbg("\n");
   }
 #endif
 
@@ -203,7 +200,7 @@ parse_product_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   offt = read_fru_str(buf, f->val_p_product_version, &f->len_p_product_version, offt);
   offt = read_fru_str(buf, f->val_p_serial_number, &f->len_p_serial_number, offt);
   offt = read_fru_str(buf, f->val_p_fru_id, &f->len_p_fru_id, offt);
-#ifdef DEBUG
+#ifdef FRU_DEBUG
   print_product_area(&fru);
 #endif
   return 0;
@@ -227,14 +224,14 @@ fru_parse_multirecord(struct multirec *m, uint8_t *buf, unsigned int buf_len) {
     warn("FRU: no space in multirecord buffer, failed to parse header\n");
     return -4;
   }
-#ifdef DEBUG
+#ifdef FRU_DEBUG
   {
     int i = 0;
     log("FRU mrec header bin:\n");
     for (;i<5;i++) {
-      msg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
+      dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
     }
-    msg("\n");
+    dbg("\n");
   }
 #endif
 
@@ -260,17 +257,17 @@ fru_parse_multirecord(struct multirec *m, uint8_t *buf, unsigned int buf_len) {
     warn("FRU: no space in multirecord buffer, failed check data\n");
     return -5;
   }
-#ifdef DEBUG
+#ifdef FRU_DEBUG
   {
     int i = 0;
     log("FRU mrec bin:\n");
     for (;i<(m->length+5);i++) {
       if ((i%8)==0) {
-        msg("\n");
+        dbg("\n");
       }
-      msg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
+      dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
     }
-    msg("\n");
+    dbg("\n");
   }
 #endif
   
@@ -460,15 +457,15 @@ fru_open_parse(void) {
       return -1;
     }
 
-#ifdef DEBUG
+#ifdef FRU_DEBUG
     int j;
     for (j=i;j<32+i;j++) {
       if ((j%8)==0) {
-        msg("\n");
+        dbg("\n");
       }
-      msg("0x%02x[%c] ", fru_buf[j], (fru_buf[j]>' '?fru_buf[j]:' '));
+      dbg("%02x[%c] ", fru_buf[j], (fru_buf[j]>' '?fru_buf[j]:' '));
     }
-    msg("\n");
+    dbg("\n");
 #endif
 
   }
@@ -510,15 +507,15 @@ fru_update_mrec_eeprom(void) {
       return -3;
     }
 
-#ifdef DEBUG
+#ifdef FRU_DEBUG
     int j;
     for (j=i;j<32+i;j++) {
       if ((j%8)==0) {
-        msg("\n");
+        dbg("\n");
       }
-      msg("0x%02x[%c] ", fru_buf2[j], (fru_buf2[j]>' '?fru_buf2[j]:' '));
+      dbg("0x%02x[%c] ", fru_buf2[j], (fru_buf2[j]>' '?fru_buf2[j]:' '));
     }
-    msg("\n");
+    dbg("\n");
 #else
     msg(".");
 #endif
