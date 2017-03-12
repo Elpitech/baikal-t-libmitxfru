@@ -25,6 +25,7 @@ main (int argc, char **argv) {
   char *svalue = NULL;
   char *dvalue = NULL;
   uint32_t val;
+  uint8_t mac[6];
   int c;
   int ret;
   int i = 0;
@@ -82,19 +83,19 @@ main (int argc, char **argv) {
     val = strtoul(svalue, NULL, 16);
     switch (val) {
     case MR_MAC_REC:
-      ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", (unsigned int*)&fru.mac[0], (unsigned int*)&fru.mac[1], (unsigned int*)&fru.mac[2], (unsigned int*)&fru.mac[3], (unsigned int*)&fru.mac[4], (unsigned int*)&fru.mac[5]);
+      ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", (unsigned int*)&mac[0], (unsigned int*)&mac[1], (unsigned int*)&mac[2], (unsigned int*)&mac[3], (unsigned int*)&mac[4], (unsigned int*)&mac[5]);
       if (ret<6) {
         err("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
         return -5;
       }
+      fru_mrec_update_mac(&fru, mac);
       break;
     case MR_SATADEV_REC:
       if (dvalue == NULL) {
         err("-d is not set, please bother yourself with reading some help\n");
         return -4;
       }
-      memset(fru.bootdevice, 0, FRU_STR_MAX);
-      memcpy(fru.bootdevice, dvalue, strlen(dvalue));
+      fru_mrec_update_bootdevice(&fru, dvalue);
       break;
     default:
       err("Unknown multirecord id %i\n", val);
