@@ -25,7 +25,6 @@ main (int argc, char **argv) {
   char *svalue = NULL;
   char *dvalue = NULL;
   uint32_t val;
-  int index;
   int c;
   int ret;
   int i = 0;
@@ -83,7 +82,7 @@ main (int argc, char **argv) {
     val = strtoul(svalue, NULL, 16);
     switch (val) {
     case MR_MAC_REC:
-      ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", fru.mac[0], fru.mac[1], fru.mac[2], fru.mac[3], fru.mac[4], fru.mac[5]);
+      ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", (unsigned int*)&fru.mac[0], (unsigned int*)&fru.mac[1], (unsigned int*)&fru.mac[2], (unsigned int*)&fru.mac[3], (unsigned int*)&fru.mac[4], (unsigned int*)&fru.mac[5]);
       if (ret<6) {
         err("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
         return -5;
