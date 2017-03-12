@@ -12,7 +12,7 @@ $(TOOL):
 .PHONY: install
 install:
 ifneq ($(PREFIX),.)
-	cp $(PROJECT) $(PREFIX)
+	cp $(TOOL) $(PREFIX)
 endif
 
 .PHONY: clean
