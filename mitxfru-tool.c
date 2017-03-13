@@ -26,6 +26,7 @@ main (int argc, char **argv) {
   char *dvalue = NULL;
   uint32_t val;
   uint8_t mac[6];
+  uint8_t test_ok;
   int c;
   int ret;
   int i = 0;
@@ -81,6 +82,10 @@ main (int argc, char **argv) {
 
   if (svalue != NULL) {
     val = strtoul(svalue, NULL, 16);
+    if (dvalue == NULL) {
+      err("-d is not set, please bother yourself with reading some help\n");
+      return -4;
+    }
     switch (val) {
     case MR_MAC_REC:
       ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", (unsigned int*)&mac[0], (unsigned int*)&mac[1], (unsigned int*)&mac[2], (unsigned int*)&mac[3], (unsigned int*)&mac[4], (unsigned int*)&mac[5]);
@@ -91,11 +96,18 @@ main (int argc, char **argv) {
       fru_mrec_update_mac(&fru, mac);
       break;
     case MR_SATADEV_REC:
-      if (dvalue == NULL) {
-        err("-d is not set, please bother yourself with reading some help\n");
-        return -4;
-      }
       fru_mrec_update_bootdevice(&fru, dvalue);
+      break;
+    case MR_PASSWD_REC:
+      fru_mrec_update_passwd_line(&fru, dvalue);
+      break;
+    case MR_TESTOK_REC:
+      ret = sscanf(dvalue, "%i", (unsigned int *)&test_ok);
+      if (ret != 1) {
+        err("Test state format not recognized\n");
+        return -6;
+      }
+      fru_mrec_update_test_ok(&fru, test_ok);
       break;
     default:
       err("Unknown multirecord id %i\n", val);
@@ -120,6 +132,12 @@ main (int argc, char **argv) {
       break;
     case MR_SATADEV_REC:
       printf("%s\n", fru.bootdevice);
+      break;
+    case MR_PASSWD_REC:
+      printf("%s\n", fru.passwd_line);
+      break;
+    case MR_TESTOK_REC:
+      printf("%i\n", fru.test_ok);
       break;
     default:
       err("Unknown multirecord id %i\n", val);

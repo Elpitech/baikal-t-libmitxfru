@@ -10,12 +10,15 @@
 
 #define MR_MAC_REC 0xC0
 #define MR_SATADEV_REC 0xC1
+#define MR_PASSWD_REC 0xC2
+#define MR_TESTOK_REC 0xC3
 
 #define FRU_ADDR 0xa6
 #define FRU_PAGE_SIZE 32
 #define FRU_ADDR_SIZE 2
 
 #define FRU_STR_MAX 32
+#define FRU_PWD_MAX 128
 #define N_MULTIREC 8
 
 #define FRU_STR(name, len) unsigned int len_##name; uint8_t val_##name[len]
@@ -34,6 +37,8 @@ struct fru {
   uint8_t mac[6];
   uint8_t mfg_date[3];
   uint8_t bootdevice[FRU_STR_MAX];
+  uint8_t passwd_line[FRU_PWD_MAX];
+  uint8_t test_ok;
   unsigned int board_area_offset;
   unsigned int product_area_offset;
   unsigned int mrec_area_offset;
@@ -57,6 +62,10 @@ extern struct fru fru;
 int fru_open_parse(void);
 int fru_update_mac(uint8_t *mac);
 int fru_update_mrec_eeprom(void);
+int fru_mrec_update_mac(struct fru *f, uint8_t *mac);
+int fru_mrec_update_bootdevice(struct fru *f, uint8_t *bootdevice);
+int fru_mrec_update_passwd_line(struct fru *f, uint8_t *passwd_line);
+int fru_mrec_update_test_ok(struct fru *f, uint8_t test_ok);
 void print_board_area(struct fru *f);
 void print_product_area(struct fru *f);
 
