@@ -442,7 +442,9 @@ fru_open_parse(void) {
   dbg("Reading eeprom\n");
   ret = fread(fru_buf, sizeof(uint8_t), FRU_SIZE, f);
   dbg("Read %i bytes\n", ret);
-  parse_fru(&fru, fru_buf, FRU_SIZE);
+  if (parse_fru(&fru, fru_buf, FRU_SIZE) != 0) {
+    return -2;
+  }
   for (i=0; i<fru.mrec_count; i++) {
     if (fru.mrec[i].type == MR_MAC_REC) {
       memcpy(fru.mac, fru.mrec[i].data, 6);
@@ -519,7 +521,9 @@ fru_open_parse(void) {
 
   }
 
-  parse_fru(&fru, fru_buf, FRU_SIZE);
+  if (parse_fru(&fru, fru_buf, FRU_SIZE) != 0) {
+    return -2;
+  }
   for (i=0; i<fru.mrec_count; i++) {
     if (fru.mrec[i].type == MR_MAC_REC) {
       memcpy(fru.mac, fru.mrec[i].data, 6);
