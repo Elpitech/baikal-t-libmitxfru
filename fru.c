@@ -13,7 +13,7 @@
 #include "common.h"
 
 #ifdef FRU_DEBUG
-#define dbg(...) {fprintf (logfile, __VA_ARGS__); }
+#define dbg(...) {fprintf (logfile, __VA_ARGS__); fflush(logfile); }
 #else
 #define dbg(...)
 #endif
@@ -457,7 +457,7 @@ fru_open_parse(void) {
       dbg("FRU: found passwd line [%s]\n", fru.passwd_line);
     } else if (fru.mrec[i].type == MR_TESTOK_REC) {
       fru.test_ok = 0;
-      memcpy(fru.test_ok, fru.mrec[i].data, 1);
+      memcpy(&fru.test_ok, fru.mrec[i].data, 1);
       dbg("FRU: found test ok record [0x%02x]\n", fru.test_ok);
     }
   }
@@ -534,7 +534,7 @@ fru_open_parse(void) {
       dbg("FRU: found passwd line [%s]\n", fru.passwd_line);
     } else if (fru.mrec[i].type == MR_TESTOK_REC) {
       fru.test_ok = 0;
-      memcpy(fru.test_ok, fru.mrec[i].data, 1);
+      memcpy(&fru.test_ok, fru.mrec[i].data, 1);
       dbg("FRU: found test ok record [0x%02x]\n", fru.test_ok);
     }
   }
