@@ -61,7 +61,6 @@ calc_cs(uint8_t *buf, uint8_t size) {
 
 int
 fru_mk_multirecord(uint8_t *buf, unsigned int buf_size, uint8_t record_type, bool end, uint8_t *record, uint8_t record_size) {
-  int offt = 0;
   int i = 0;
   int size = 5+record_size;
   int remainder = buf_size-size;
@@ -74,7 +73,6 @@ fru_mk_multirecord(uint8_t *buf, unsigned int buf_size, uint8_t record_type, boo
   buf[1] = (end ? (1<<7) : 0) | 0x02;
   buf[2] = record_size;
   memcpy((buf+5), record, record_size);
-  offt = 5+record_size;
   buf[3] = 256-calc_cs(buf+5, record_size);
   buf[4] = 256-calc_cs(buf, 5);
   for (;i<size;i++) {
@@ -353,7 +351,7 @@ fru_mrec_update_mac(struct fru *f, uint8_t *mac) {
 int
 fru_mrec_update_bootdevice(struct fru *f, uint8_t *bootdevice) {
   int i = 0;
-  int len = strlen(bootdevice);
+  int len = strlen((char *)bootdevice);
   len = (len>FRU_STR_MAX?FRU_STR_MAX:len);
   memset(f->bootdevice, 0, FRU_STR_MAX);
   memcpy(f->bootdevice, bootdevice, (len>FRU_STR_MAX?FRU_STR_MAX:len));
@@ -381,7 +379,7 @@ fru_mrec_update_bootdevice(struct fru *f, uint8_t *bootdevice) {
 int
 fru_mrec_update_passwd_line(struct fru *f, uint8_t *passwd_line) {
   int i = 0;
-  int len = strlen(passwd_line);
+  int len = strlen((char *)passwd_line);
   len = (len>FRU_PWD_MAX?FRU_PWD_MAX:len);
   memset(f->passwd_line, 0, FRU_PWD_MAX);
   memcpy(f->passwd_line, passwd_line, (len>FRU_PWD_MAX?FRU_PWD_MAX:len));
@@ -469,7 +467,6 @@ fru_open_parse(void) {
 
 int
 fru_update_mrec_eeprom(void) {
-  int i = 0;
   int ret = 0;
   FILE *f = NULL;
   memcpy(fru_buf2, fru_buf, fru.mrec_area_offset);
