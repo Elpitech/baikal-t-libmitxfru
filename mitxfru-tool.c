@@ -14,7 +14,7 @@ static const char usage[] = "  -q : quite; dont print anything unrelated to what
   "  -h : help; you are reading it already though\n"
   "  -g : get multirecord by hex id\n"
   "  -s : set multirecord by hex id, requires -d option to be filled with some data\n"
-  "  -d : multirecord data to set; for use with -s option\n";
+  "  -d : multirecord data to set; for use with -s option\n"
   "  -r : display FRU information\n";
 
 bool qflag = false;
