@@ -86,18 +86,18 @@ main (int argc, char **argv) {
   }
 
   if (rflag) {
-    printf("mfg_name, %s\n", fru.mfg_name);
-    printf("product_name, %s\n", fru.product_name);
-    printf("product_name, %s\n", fru.serial_number);
-    printf("product_name, %s\n", fru.part_number);
-    printf("product_name, %s\n", fru.fru_id);
+    printf("b_mfg_name, %s\n", fru.val_mfg_name);
+    printf("b_product_name, %s\n", fru.val_product_name);
+    printf("b_serial_number, %s\n", fru.val_serial_number);
+    printf("b_part_number, %s\n", fru.val_part_number);
+    printf("b_fru_id, %s\n", fru.val_fru_id);
 
-    printf("product_name, %s\n", fru.p_product_mfg);
-    printf("product_name, %s\n", fru.p_product_name);
-    printf("product_name, %s\n", fru.p_part_model_number);
-    printf("product_name, %s\n", fru.p_product_version);
-    printf("product_name, %s\n", fru.p_serial_number);
-    printf("product_name, %s\n", fru.p_fru_id);
+    printf("p_product_mfg, %s\n", fru.val_p_product_mfg);
+    printf("p_product_name, %s\n", fru.val_p_product_name);
+    printf("p_part_model_number, %s\n", fru.val_p_part_model_number);
+    printf("p_product_version, %s\n", fru.val_p_product_version);
+    printf("p_serial_number, %s\n", fru.val_p_serial_number);
+    printf("p_fru_id, %s\n", fru.val_p_fru_id);
     return 0;
   }
 
