@@ -15,12 +15,14 @@ static const char usage[] = "  -q : quite; dont print anything unrelated to what
   "  -g : get multirecord by hex id\n"
   "  -s : set multirecord by hex id, requires -d option to be filled with some data\n"
   "  -d : multirecord data to set; for use with -s option\n";
+  "  -r : display FRU information\n";
 
-bool qflag = 0;
+bool qflag = false;
 
 int
 main (int argc, char **argv) {
-  bool hflag = 0;
+  bool hflag = false;
+  bool rflag = false
   char *gvalue = NULL;
   char *svalue = NULL;
   char *dvalue = NULL;
@@ -35,6 +37,9 @@ main (int argc, char **argv) {
 
   while ((c = getopt (argc, argv, "qhg:s:d:")) != -1) {
     switch (c) {
+    case 'r':
+      rflag = true;
+      break;
     case 'q':
       qflag = true;
       break;
@@ -78,6 +83,22 @@ main (int argc, char **argv) {
   if (ret != 0) {
     err("Failed to load data from EEPROM\n");
     return -1;
+  }
+
+  if (rflag) {
+    printf("mfg_name, %s\n", fru.mfg_name);
+    printf("product_name, %s\n", fru.product_name);
+    printf("product_name, %s\n", fru.serial_number);
+    printf("product_name, %s\n", fru.part_number);
+    printf("product_name, %s\n", fru.fru_id);
+
+    printf("product_name, %s\n", fru.p_product_mfg);
+    printf("product_name, %s\n", fru.p_product_name);
+    printf("product_name, %s\n", fru.p_part_model_number);
+    printf("product_name, %s\n", fru.p_product_version);
+    printf("product_name, %s\n", fru.p_serial_number);
+    printf("product_name, %s\n", fru.p_fru_id);
+    return 0;
   }
 
   if (svalue != NULL) {
