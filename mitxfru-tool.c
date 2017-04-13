@@ -35,7 +35,7 @@ main (int argc, char **argv) {
 
   opterr = 0;
 
-  while ((c = getopt (argc, argv, "qhg:s:d:")) != -1) {
+  while ((c = getopt (argc, argv, "rqhg:s:d:")) != -1) {
     switch (c) {
     case 'r':
       rflag = true;
