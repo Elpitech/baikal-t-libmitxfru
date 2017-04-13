@@ -22,7 +22,7 @@ bool qflag = false;
 int
 main (int argc, char **argv) {
   bool hflag = false;
-  bool rflag = false
+  bool rflag = false;
   char *gvalue = NULL;
   char *svalue = NULL;
   char *dvalue = NULL;
