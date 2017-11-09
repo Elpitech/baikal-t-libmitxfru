@@ -432,10 +432,12 @@ fru_mrec_update_power_policy(struct fru *f, enum POWER_POLICY pp) {
   int i = 0;
   f->power_policy = pp;
   log("Checking if power policy mrec already exists\n");
+  log("Power policy value: %i\n", f->power_policy);
   for (; i<f->mrec_count; i++) {
     if (f->mrec[i].type == MR_POWER_POLICY_REC) {
       log("Found power policy mrec, updating\n");
       f->mrec[i].data = &f->power_policy;
+      log("Updating data: %02x\n", f->mrec[i].data[0]);
       f->mrec[i].length = 1;
       return 0;
     }
@@ -447,6 +449,7 @@ fru_mrec_update_power_policy(struct fru *f, enum POWER_POLICY pp) {
   m->end = true;
   m->length = 1;
   m->data = &f->power_policy;
+  log("Setting data: %02x\n", m->data[0]);
   f->mrec_count ++;
   return -1;
 }
@@ -454,23 +457,23 @@ fru_mrec_update_power_policy(struct fru *f, enum POWER_POLICY pp) {
 int
 fru_mrec_update_power_state(struct fru *f) {
   int i = 0;
-  uint8_t data = 1;
-  log("Checking if power policy mrec already exists\n");
+  f->power_state = 1;
+  log("Checking if power state mrec already exists\n");
   for (; i<f->mrec_count; i++) {
-    if (f->mrec[i].type == MR_POWER_POLICY_REC) {
+    if (f->mrec[i].type == MR_POWER_STATE_REC) {
       log("Found power policy mrec, updating\n");
-      f->mrec[i].data = &data;
+      f->mrec[i].data = &f->power_state;
       f->mrec[i].length = 1;
       return 0;
     }
   }
   log("Power policy mrec not found, creating mrec %i\n", f->mrec_count);
   struct multirec *m = &(f->mrec[f->mrec_count]);
-  m->type = MR_POWER_POLICY_REC;
+  m->type = MR_POWER_STATE_REC;
   m->format = 2;
   m->end = true;
   m->length = 1;
-  m->data = &data;
+  m->data = &f->power_state;
   f->mrec_count ++;
   return -1;
 }

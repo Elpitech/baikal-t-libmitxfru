@@ -48,6 +48,7 @@ struct fru {
   uint8_t bootdevice[FRU_STR_MAX];
   uint8_t passwd_line[FRU_PWD_MAX];
   uint8_t power_policy;
+  uint8_t power_state;
   uint8_t test_ok;
   unsigned int board_area_offset;
   unsigned int product_area_offset;
@@ -77,6 +78,7 @@ int fru_mrec_update_bootdevice(struct fru *f, uint8_t *bootdevice);
 int fru_mrec_update_passwd_line(struct fru *f, uint8_t *passwd_line);
 int fru_mrec_update_test_ok(struct fru *f, uint8_t test_ok);
 int fru_mrec_update_power_policy(struct fru *f, enum POWER_POLICY pp);
+int fru_mrec_update_power_state(struct fru *f);
 void print_board_area(struct fru *f);
 void print_product_area(struct fru *f);
 
