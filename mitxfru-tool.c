@@ -29,6 +29,7 @@ main (int argc, char **argv) {
   uint32_t val;
   uint8_t mac[6];
   uint8_t test_ok;
+  uint8_t power_policy;
   int c;
   int ret;
   int i = 0;
@@ -117,10 +118,10 @@ main (int argc, char **argv) {
       fru_mrec_update_mac(&fru, mac);
       break;
     case MR_SATADEV_REC:
-      fru_mrec_update_bootdevice(&fru, dvalue);
+      fru_mrec_update_bootdevice(&fru, (uint8_t*)dvalue);
       break;
     case MR_PASSWD_REC:
-      fru_mrec_update_passwd_line(&fru, dvalue);
+      fru_mrec_update_passwd_line(&fru, (uint8_t*)dvalue);
       break;
     case MR_TESTOK_REC:
       ret = sscanf(dvalue, "%i", (unsigned int *)&test_ok);
@@ -130,6 +131,15 @@ main (int argc, char **argv) {
       }
       fru_mrec_update_test_ok(&fru, test_ok);
       break;
+    case MR_POWER_POLICY_REC:
+      ret = sscanf(dvalue, "%i", (unsigned int *)&power_policy);
+      if (ret != 1) {
+        err("Power policy format not recognized\n");
+        return -6;
+      }
+      fru_mrec_update_power_policy(&fru, power_policy);
+      break;
+
     default:
       err("Unknown multirecord id %i\n", val);
       return -3;
@@ -159,6 +169,9 @@ main (int argc, char **argv) {
       break;
     case MR_TESTOK_REC:
       printf("%i\n", fru.test_ok);
+      break;
+    case MR_POWER_POLICY_REC:
+      printf("%i\n", fru.power_policy);
       break;
     default:
       err("Unknown multirecord id %i\n", val);

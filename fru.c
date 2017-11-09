@@ -74,7 +74,7 @@ fru_mk_multirecord(uint8_t *buf, unsigned int buf_size, uint8_t record_type, boo
   buf[2] = record_size;
   memcpy((buf+5), record, record_size);
   buf[3] = 256-calc_cs(buf+5, record_size);
-  buf[4] = 256-calc_cs(buf, 5);
+  buf[4] = 256-calc_cs(buf, 4);
   for (;i<size;i++) {
     if (i%8==0) {
       dbg("\r\n");
@@ -427,12 +427,36 @@ fru_mrec_update_test_ok(struct fru *f, uint8_t test_ok) {
   return -1;
 }
 
+int
+fru_mrec_update_power_policy(struct fru *f, enum POWER_POLICY pp) {
+  int i = 0;
+  f->power_policy = pp;
+  log("Checking if power policy mrec already exists\n");
+  for (; i<f->mrec_count; i++) {
+    if (f->mrec[i].type == MR_POWER_POLICY_REC) {
+      log("Found power policy mrec, updating\n");
+      f->mrec[i].data = &f->power_policy;
+      f->mrec[i].length = 1;
+      return 0;
+    }
+  }
+  log("Power policy mrec not found, creating mrec %i\n", f->mrec_count);
+  struct multirec *m = &(f->mrec[f->mrec_count]);
+  m->type = MR_POWER_POLICY_REC;
+  m->format = 2;
+  m->end = true;
+  m->length = 1;
+  m->data = &f->power_policy;
+  f->mrec_count ++;
+  return -1;
+}
+
 #ifdef RECOVERY
 int
 fru_open_parse(void) {
   FILE *f = fopen("/sys/bus/i2c/devices/1-0053/eeprom", "r");
-  int ret = 0;
   int i = 0;
+  int ret = 0;
   if (f == NULL) {
     err("FRU: failed to open eeprom\n");
     return -1;
@@ -459,6 +483,10 @@ fru_open_parse(void) {
       fru.test_ok = 0;
       memcpy(&fru.test_ok, fru.mrec[i].data, 1);
       dbg("FRU: found test ok record [0x%02x]\n", fru.test_ok);
+    } else if (fru.mrec[i].type == MR_POWER_POLICY_REC) {
+      fru.power_policy = 0;
+      memcpy(&fru.power_policy, fru.mrec[i].data, 1);
+      dbg("FRU: found power policy record [0x%02x]\n", fru.power_policy);
     }
   }
   fclose(f);
@@ -537,6 +565,10 @@ fru_open_parse(void) {
       fru.test_ok = 0;
       memcpy(&fru.test_ok, fru.mrec[i].data, 1);
       dbg("FRU: found test ok record [0x%02x]\n", fru.test_ok);
+    } else if (fru.mrec[i].type == MR_POWER_POLICY_REC) {
+      fru.power_policy = 0;
+      memcpy(&fru.power_policy, fru.mrec[i].data, 1);
+      dbg("FRU: found power policy record [0x%02x]\n", fru.power_policy);
     }
   }
   return 0;

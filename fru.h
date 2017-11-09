@@ -12,6 +12,8 @@
 #define MR_SATADEV_REC 0xC1
 #define MR_PASSWD_REC 0xC2
 #define MR_TESTOK_REC 0xC3
+#define MR_POWER_POLICY_REC 0xC4
+#define MR_POWER_STATE_REC 0xC5
 
 #define FRU_ADDR 0xa6
 #define FRU_PAGE_SIZE 32
@@ -22,6 +24,13 @@
 #define N_MULTIREC 8
 
 #define FRU_STR(name, len) unsigned int len_##name; uint8_t val_##name[len]
+
+enum POWER_POLICY {
+  PP_OFF=0,
+  PP_KEEP,
+  PP_ON,
+  PP_NUM
+};
 
 struct multirec {
   uint8_t type;
@@ -38,6 +47,7 @@ struct fru {
   uint8_t mfg_date[3];
   uint8_t bootdevice[FRU_STR_MAX];
   uint8_t passwd_line[FRU_PWD_MAX];
+  uint8_t power_policy;
   uint8_t test_ok;
   unsigned int board_area_offset;
   unsigned int product_area_offset;
@@ -66,6 +76,7 @@ int fru_mrec_update_mac(struct fru *f, uint8_t *mac);
 int fru_mrec_update_bootdevice(struct fru *f, uint8_t *bootdevice);
 int fru_mrec_update_passwd_line(struct fru *f, uint8_t *passwd_line);
 int fru_mrec_update_test_ok(struct fru *f, uint8_t test_ok);
+int fru_mrec_update_power_policy(struct fru *f, enum POWER_POLICY pp);
 void print_board_area(struct fru *f);
 void print_product_area(struct fru *f);
 
