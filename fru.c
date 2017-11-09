@@ -64,7 +64,6 @@ fru_mk_multirecord(uint8_t *buf, unsigned int buf_size, uint8_t record_type, boo
   int i = 0;
   int size = 5+record_size;
   int remainder = buf_size-size;
-  log("packing multirecord");
 
   if (remainder<=0) {
     return -1;
@@ -325,6 +324,7 @@ fru_mk_multirecords_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   unsigned int offt = 0;
   log("Packing multirecord area\n");
   for (;i<f->mrec_count; i++) {
+    log("Packing [%02x]\n", f->mrec[i].type);
     ret = fru_mk_multirecord(buf+offt, buf_len-offt, f->mrec[i].type, (f->mrec_count-i>1?false:true), f->mrec[i].data, f->mrec[i].length);
     if (ret < 0) {
       warn("FRU: Failed to pack multirecord\n");
@@ -447,6 +447,30 @@ fru_mrec_update_power_policy(struct fru *f, enum POWER_POLICY pp) {
   m->end = true;
   m->length = 1;
   m->data = &f->power_policy;
+  f->mrec_count ++;
+  return -1;
+}
+
+int
+fru_mrec_update_power_state(struct fru *f) {
+  int i = 0;
+  uint8_t data = 1;
+  log("Checking if power policy mrec already exists\n");
+  for (; i<f->mrec_count; i++) {
+    if (f->mrec[i].type == MR_POWER_POLICY_REC) {
+      log("Found power policy mrec, updating\n");
+      f->mrec[i].data = &data;
+      f->mrec[i].length = 1;
+      return 0;
+    }
+  }
+  log("Power policy mrec not found, creating mrec %i\n", f->mrec_count);
+  struct multirec *m = &(f->mrec[f->mrec_count]);
+  m->type = MR_POWER_POLICY_REC;
+  m->format = 2;
+  m->end = true;
+  m->length = 1;
+  m->data = &data;
   f->mrec_count ++;
   return -1;
 }
