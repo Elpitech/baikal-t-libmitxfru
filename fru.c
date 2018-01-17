@@ -38,9 +38,6 @@ static uint8_t fru_buf[FRU_SIZE];
 static uint8_t fru_buf2[FRU_SIZE];
 struct fru fru;
 
-#define MR_MAC_REC 0xC0
-#define MR_UBOOT_REC 0xC1
-
 uint8_t
 calc_cs(uint8_t *buf, uint8_t size) {
   uint8_t cs = 0;
@@ -336,12 +333,16 @@ fru_mk_multirecords_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
 }
 
 int
-fru_mrec_update_mac(struct fru *f, uint8_t *mac) {
+fru_mrec_update_mac(struct fru *f, uint8_t *mac, int iface) {
   int i = 0;
-  memcpy(f->mac, mac, 6);
+  static const int mac_mrec_id[N_MAC] = {MR_MAC_REC, MR_MAC2_REC, MR_MAC3_REC};
+  if (iface>=N_MAC) {
+    return -1;
+  }
+  memcpy(f->mac_data+iface*6, mac, 6);
   for (; i<f->mrec_count; i++) {
-    if (f->mrec[i].type == MR_MAC_REC) {
-      f->mrec[i].data = f->mac;
+    if (f->mrec[i].type == mac_mrec_id[iface]) {
+      f->mrec[i].data = f->mac_data+iface*6;
       return 0;
     }
   }
@@ -480,9 +481,8 @@ fru_mrec_update_power_state(struct fru *f) {
 
 #ifdef RECOVERY
 int
-fru_open_parse(void) {
+read_fru(uint8_t *fru_buf) {
   FILE *f = fopen("/sys/bus/i2c/devices/1-0053/eeprom", "r");
-  int i = 0;
   int ret = 0;
   if (f == NULL) {
     err("FRU: failed to open eeprom\n");
@@ -491,31 +491,6 @@ fru_open_parse(void) {
   dbg("Reading eeprom\n");
   ret = fread(fru_buf, sizeof(uint8_t), FRU_SIZE, f);
   dbg("Read %i bytes\n", ret);
-  if (parse_fru(&fru, fru_buf, FRU_SIZE) != 0) {
-    return -2;
-  }
-  for (i=0; i<fru.mrec_count; i++) {
-    if (fru.mrec[i].type == MR_MAC_REC) {
-      memcpy(fru.mac, fru.mrec[i].data, 6);
-      dbg("FRU: found MAC mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac[0], fru.mac[1], fru.mac[2], fru.mac[3], fru.mac[4], fru.mac[5]);
-    } else if (fru.mrec[i].type == MR_SATADEV_REC) {
-      memset(fru.bootdevice, 0, FRU_STR_MAX);
-      memcpy(fru.bootdevice, fru.mrec[i].data, (fru.mrec[i].length>FRU_STR_MAX?FRU_STR_MAX:fru.mrec[i].length));
-      dbg("FRU: found SATA boot device [%s]\n", fru.bootdevice);
-    } else if (fru.mrec[i].type == MR_PASSWD_REC) {
-      memset(fru.passwd_line, 0, FRU_PWD_MAX);
-      memcpy(fru.passwd_line, fru.mrec[i].data, (fru.mrec[i].length>FRU_PWD_MAX?FRU_PWD_MAX:fru.mrec[i].length));
-      dbg("FRU: found passwd line [%s]\n", fru.passwd_line);
-    } else if (fru.mrec[i].type == MR_TESTOK_REC) {
-      fru.test_ok = 0;
-      memcpy(&fru.test_ok, fru.mrec[i].data, 1);
-      dbg("FRU: found test ok record [0x%02x]\n", fru.test_ok);
-    } else if (fru.mrec[i].type == MR_POWER_POLICY_REC) {
-      fru.power_policy = 0;
-      memcpy(&fru.power_policy, fru.mrec[i].data, 1);
-      dbg("FRU: found power policy record [0x%02x]\n", fru.power_policy);
-    }
-  }
   fclose(f);
   return 0;
 }
@@ -541,11 +516,9 @@ fru_update_mrec_eeprom(void) {
   fclose(f);
   return 0;
 }
-
-
 #else
 int
-fru_open_parse(void) {
+read_fru(uint8_t *fru_buf) {
   int ret = 0;
   int i;
   dbg("Reading eeprom\n");
@@ -570,33 +543,6 @@ fru_open_parse(void) {
     }
     dbg("\n");
 #endif
-
-  }
-
-  if (parse_fru(&fru, fru_buf, FRU_SIZE) != 0) {
-    return -2;
-  }
-  for (i=0; i<fru.mrec_count; i++) {
-    if (fru.mrec[i].type == MR_MAC_REC) {
-      memcpy(fru.mac, fru.mrec[i].data, 6);
-      dbg("FRU: found MAC mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac[0], fru.mac[1], fru.mac[2], fru.mac[3], fru.mac[4], fru.mac[5]);
-    } else if (fru.mrec[i].type == MR_SATADEV_REC) {
-      memset(fru.bootdevice, 0, FRU_STR_MAX);
-      memcpy(fru.bootdevice, fru.mrec[i].data, (fru.mrec[i].length>FRU_STR_MAX?FRU_STR_MAX:fru.mrec[i].length));
-      dbg("FRU: found SATA boot device [%s]\n", fru.bootdevice);
-    } else if (fru.mrec[i].type == MR_PASSWD_REC) {
-      memset(fru.passwd_line, 0, FRU_PWD_MAX);
-      memcpy(fru.passwd_line, fru.mrec[i].data, (fru.mrec[i].length>FRU_PWD_MAX?FRU_PWD_MAX:fru.mrec[i].length));
-      dbg("FRU: found passwd line [%s]\n", fru.passwd_line);
-    } else if (fru.mrec[i].type == MR_TESTOK_REC) {
-      fru.test_ok = 0;
-      memcpy(&fru.test_ok, fru.mrec[i].data, 1);
-      dbg("FRU: found test ok record [0x%02x]\n", fru.test_ok);
-    } else if (fru.mrec[i].type == MR_POWER_POLICY_REC) {
-      fru.power_policy = 0;
-      memcpy(&fru.power_policy, fru.mrec[i].data, 1);
-      dbg("FRU: found power policy record [0x%02x]\n", fru.power_policy);
-    }
   }
   return 0;
 }
@@ -642,3 +588,41 @@ fru_update_mrec_eeprom(void) {
   return 0;
 }
 #endif
+
+int
+fru_open_parse(void) {
+  int i = 0;
+  read_fru(fru_buf);
+  if (parse_fru(&fru, fru_buf, FRU_SIZE) != 0) {
+    return -2;
+  }
+  for (i=0; i<fru.mrec_count; i++) {
+    if (fru.mrec[i].type == MR_MAC_REC) {
+      memcpy(fru.mac_data, fru.mrec[i].data, 6);
+      dbg("FRU: found MAC mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac_data[0], fru.mac_data[1], fru.mac_data[2], fru.mac_data[3], fru.mac_data[4], fru.mac_data[5]);
+    } else if (fru.mrec[i].type == MR_MAC2_REC) {
+      memcpy(fru.mac_data+6, fru.mrec[i].data, 6);
+      dbg("FRU: found MAC2 mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac_data[6], fru.mac_data[7], fru.mac_data[8], fru.mac_data[9], fru.mac_data[10], fru.mac_data[11]);
+    } else if (fru.mrec[i].type == MR_MAC3_REC) {
+      memcpy(fru.mac_data+12, fru.mrec[i].data, 6);
+      dbg("FRU: found MAC3 mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac_data[12], fru.mac_data[13], fru.mac_data[14], fru.mac_data[15], fru.mac_data[16], fru.mac_data[17]);
+    } else if (fru.mrec[i].type == MR_SATADEV_REC) {
+      memset(fru.bootdevice, 0, FRU_STR_MAX);
+      memcpy(fru.bootdevice, fru.mrec[i].data, (fru.mrec[i].length>FRU_STR_MAX?FRU_STR_MAX:fru.mrec[i].length));
+      dbg("FRU: found SATA boot device [%s]\n", fru.bootdevice);
+    } else if (fru.mrec[i].type == MR_PASSWD_REC) {
+      memset(fru.passwd_line, 0, FRU_PWD_MAX);
+      memcpy(fru.passwd_line, fru.mrec[i].data, (fru.mrec[i].length>FRU_PWD_MAX?FRU_PWD_MAX:fru.mrec[i].length));
+      dbg("FRU: found passwd line [%s]\n", fru.passwd_line);
+    } else if (fru.mrec[i].type == MR_TESTOK_REC) {
+      fru.test_ok = 0;
+      memcpy(&fru.test_ok, fru.mrec[i].data, 1);
+      dbg("FRU: found test ok record [0x%02x]\n", fru.test_ok);
+    } else if (fru.mrec[i].type == MR_POWER_POLICY_REC) {
+      fru.power_policy = 0;
+      memcpy(&fru.power_policy, fru.mrec[i].data, 1);
+      dbg("FRU: found power policy record [0x%02x]\n", fru.power_policy);
+    }
+  }
+  return 0;
+}

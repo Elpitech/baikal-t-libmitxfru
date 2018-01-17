@@ -115,7 +115,7 @@ main (int argc, char **argv) {
         err("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
         return -5;
       }
-      fru_mrec_update_mac(&fru, mac);
+      fru_mrec_update_mac(&fru, mac, 0);
       break;
     case MR_SATADEV_REC:
       fru_mrec_update_bootdevice(&fru, (uint8_t*)dvalue);
@@ -139,6 +139,22 @@ main (int argc, char **argv) {
       }
       fru_mrec_update_power_policy(&fru, power_policy);
       break;
+    case MR_MAC2_REC:
+      ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", (unsigned int*)&mac[0], (unsigned int*)&mac[1], (unsigned int*)&mac[2], (unsigned int*)&mac[3], (unsigned int*)&mac[4], (unsigned int*)&mac[5]);
+      if (ret<6) {
+        err("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
+        return -5;
+      }
+      fru_mrec_update_mac(&fru, mac, 1);
+      break;
+    case MR_MAC3_REC:
+      ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", (unsigned int*)&mac[0], (unsigned int*)&mac[1], (unsigned int*)&mac[2], (unsigned int*)&mac[3], (unsigned int*)&mac[4], (unsigned int*)&mac[5]);
+      if (ret<6) {
+        err("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
+        return -5;
+      }
+      fru_mrec_update_mac(&fru, mac, 2);
+      break;
 
     default:
       err("Unknown multirecord id %i\n", val);
@@ -159,7 +175,7 @@ main (int argc, char **argv) {
     val = strtoul(gvalue, NULL, 16);
     switch (val) {
     case MR_MAC_REC:
-      printf("%02x:%02x:%02x:%02x:%02x:%02x\n", fru.mac[0], fru.mac[1], fru.mac[2], fru.mac[3], fru.mac[4], fru.mac[5]);
+      printf("%02x:%02x:%02x:%02x:%02x:%02x\n", fru.mac_data[0], fru.mac_data[1], fru.mac_data[2], fru.mac_data[3], fru.mac_data[4], fru.mac_data[5]);
       break;
     case MR_SATADEV_REC:
       printf("%s\n", fru.bootdevice);
@@ -172,6 +188,12 @@ main (int argc, char **argv) {
       break;
     case MR_POWER_POLICY_REC:
       printf("%i\n", fru.power_policy);
+      break;
+    case MR_MAC2_REC:
+      printf("%02x:%02x:%02x:%02x:%02x:%02x\n", fru.mac_data[6], fru.mac_data[7], fru.mac_data[8], fru.mac_data[9], fru.mac_data[10], fru.mac_data[11]);
+      break;
+    case MR_MAC3_REC:
+      printf("%02x:%02x:%02x:%02x:%02x:%02x\n", fru.mac_data[12], fru.mac_data[13], fru.mac_data[14], fru.mac_data[15], fru.mac_data[16], fru.mac_data[17]);
       break;
     default:
       err("Unknown multirecord id %i\n", val);
