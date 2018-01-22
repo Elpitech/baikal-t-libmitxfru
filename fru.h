@@ -48,6 +48,9 @@ struct multirec {
 
 struct fru {
   uint8_t mac_data[6*N_MAC];
+  uint8_t *mac0;
+  uint8_t *mac1;
+  uint8_t *mac2;
   uint8_t mfg_date[3];
   uint8_t bootdevice[FRU_STR_MAX];
   uint8_t passwd_line[FRU_PWD_MAX];

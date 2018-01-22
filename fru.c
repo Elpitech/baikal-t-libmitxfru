@@ -592,6 +592,9 @@ fru_update_mrec_eeprom(void) {
 int
 fru_open_parse(void) {
   int i = 0;
+  fru.mac0 = fru.mac_data;
+  fru.mac1 = fru.mac_data+6;
+  fru.mac2 = fru.mac_data+12;
   read_fru(fru_buf);
   if (parse_fru(&fru, fru_buf, FRU_SIZE) != 0) {
     return -2;
