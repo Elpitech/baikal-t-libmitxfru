@@ -13,23 +13,23 @@
 #include "common.h"
 
 #ifdef FRU_DEBUG
-#define dbg(...) {fprintf (logfile, __VA_ARGS__); fflush(logfile); }
+#define fru_dbg(...) {fprintf (logfile, __VA_ARGS__); fflush(logfile); }
 #else
-#define dbg(...)
+#define fru_dbg(...)
 #endif
 
 #else
 #include <common.h>
 #include <i2c.h>
-#define msg(...) {printf (__VA_ARGS__); }
-#define log(...) {printf ("L["TAG"]: "__VA_ARGS__); }
-#define warn(...) {printf ("W["TAG"]: "__VA_ARGS__); }
-#define err(...) {printf ("E["TAG"]: "__VA_ARGS__); }
+#define fmsg(...) {printf (__VA_ARGS__); }
+#define flog(...) {printf ("L["TAG"]: "__VA_ARGS__); }
+#define fwarn(...) {printf ("W["TAG"]: "__VA_ARGS__); }
+#define ferr(...) {printf ("E["TAG"]: "__VA_ARGS__); }
 
 #ifdef FRU_DEBUG
-#define dbg(...) {printf (__VA_ARGS__); }
+#define fru_dbg(...) {printf (__VA_ARGS__); }
 #else
-#define dbg(...)
+#define fru_dbg(...)
 #endif
 
 #endif
@@ -42,17 +42,17 @@ uint8_t
 calc_cs(uint8_t *buf, uint8_t size) {
   uint8_t cs = 0;
   int i = 0;
-  dbg("CS:\n");
+  fru_dbg("CS:\n");
   for (;i<size; i++) {
     cs += buf[i];
 #ifdef FRU_DEBUG
     if (i%8==0) {
-      dbg("\n");
+      fru_dbg("\n");
     }
-    dbg("0x%02x ", cs);
+    fru_dbg("0x%02x ", cs);
 #endif
   }
-  dbg("\n");
+  fru_dbg("\n");
   return cs;
 }
 
@@ -73,11 +73,11 @@ fru_mk_multirecord(uint8_t *buf, unsigned int buf_size, uint8_t record_type, boo
   buf[4] = 256-calc_cs(buf, 4);
   for (;i<size;i++) {
     if (i%8==0) {
-      dbg("\r\n");
+      fru_dbg("\r\n");
     }
-    dbg("%02x[%c] ", buf[i], (buf[i]>=0x20 ? buf[i] : ' '));
+    fru_dbg("%02x[%c] ", buf[i], (buf[i]>=0x20 ? buf[i] : ' '));
   }
-  dbg("\r\n");
+  fru_dbg("\r\n");
   return size;
 }
 
@@ -96,30 +96,30 @@ parse_board_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   int offt = 0;
   
   if (buf[0] != BOARD_AREA_VERSION) {
-    warn("FRU: Board area version is not valid\n");
+    fwarn("FRU: Board area version is not valid\n");
     return -1;
   }
   if ((buf[1]*8)>buf_len) {
-    warn("FRU: Board area size mismatch\n");
+    fwarn("FRU: Board area size mismatch\n");
     return -2;
   }
 #ifdef FRU_DEBUG
   {
     int i = 0;
-    log("FRU Board area bin:\n");
+    flog("FRU Board area bin:\n");
     for (;i<buf[1]*8;i++) {
       if ((i%8)==0) {
-        dbg("\n");
+        fru_dbg("\n");
       }
-      dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
+      fru_dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
     }
-    dbg("\n");
+    fru_dbg("\n");
   }
 #endif
 
   cs = calc_cs(buf, buf[1]*8);
   if (cs != 0) {
-    warn("FRU: Bad board area checksum [0-%i]: %i\n", buf[1]*8, cs);
+    fwarn("FRU: Bad board area checksum [0-%i]: %i\n", buf[1]*8, cs);
     return -3;
   }
   f->mfg_date[0] = buf[3];
@@ -140,41 +140,41 @@ parse_board_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
 
 void
 print_board_area(struct fru *f) {
-  log("FRU Board area:\n");
-  log("Board mfg:          \t%s\n", f->val_mfg_name);
-  log("Board name:         \t%s\n", f->val_product_name);
-  log("Board serial number:\t%s\n", f->val_serial_number);
-  log("Board part number:  \t%s\n", f->val_part_number);
-  log("Board fru id:       \t%s\n", f->val_fru_id);
+  flog("FRU Board area:\n");
+  flog("Board mfg:          \t%s\n", f->val_mfg_name);
+  flog("Board name:         \t%s\n", f->val_product_name);
+  flog("Board serial number:\t%s\n", f->val_serial_number);
+  flog("Board part number:  \t%s\n", f->val_part_number);
+  flog("Board fru id:       \t%s\n", f->val_fru_id);
 }
 
 int
 parse_product_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   int offt = 0;
   if (buf[0] != PRODUCT_AREA_VERSION) {
-    warn("FRU: Product area version is not valid\n");
+    fwarn("FRU: Product area version is not valid\n");
     return -1;
   }
   if ((buf[1]*8)>buf_len) {
-    warn("FRU: Product area size mismatch\n");
+    fwarn("FRU: Product area size mismatch\n");
     return -2;
   }
 #ifdef FRU_DEBUG
   {
     int i = 0;
-    log("FRU Product area bin:\n");
+    flog("FRU Product area bin:\n");
     for (i=0; i<buf[1]*8; i++) {
       if ((i%8)==0) {
-        dbg("\n");
+        fru_dbg("\n");
       }
-      dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
+      fru_dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
     }
-    dbg("\n");
+    fru_dbg("\n");
   }
 #endif
 
   if (calc_cs(buf, buf[1]*8) != 0) {
-    warn("FRU: Bad product area checksum\n");
+    fwarn("FRU: Bad product area checksum\n");
     return -3;
   }
   offt = 3;
@@ -192,35 +192,35 @@ parse_product_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
 
 void
 print_product_area(struct fru *f) {
-  log("FRU Product area:\n");
-  log("Product mfg:          \t%s\n", f->val_p_product_mfg);
-  log("Product name:         \t%s\n", f->val_p_product_name);
-  log("Product model number: \t%s\n", f->val_p_part_model_number);
-  log("Product version:      \t%s\n", f->val_p_product_version);
-  log("Product serial number:\t%s\n", f->val_p_serial_number);
-  log("Product fru id:       \t%s\n", f->val_p_fru_id);
+  flog("FRU Product area:\n");
+  flog("Product mfg:          \t%s\n", f->val_p_product_mfg);
+  flog("Product name:         \t%s\n", f->val_p_product_name);
+  flog("Product model number: \t%s\n", f->val_p_part_model_number);
+  flog("Product version:      \t%s\n", f->val_p_product_version);
+  flog("Product serial number:\t%s\n", f->val_p_serial_number);
+  flog("Product fru id:       \t%s\n", f->val_p_fru_id);
 }
 
 int
 fru_parse_multirecord(struct multirec *m, uint8_t *buf, unsigned int buf_len) {
   uint8_t data_cs;
   if (buf_len<5) {
-    warn("FRU: no space in multirecord buffer, failed to parse header\n");
+    fwarn("FRU: no space in multirecord buffer, failed to parse header\n");
     return -4;
   }
 #ifdef FRU_DEBUG
   {
     int i = 0;
-    log("FRU mrec header bin:\n");
+    flog("FRU mrec header bin:\n");
     for (;i<5;i++) {
-      dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
+      fru_dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
     }
-    dbg("\n");
+    fru_dbg("\n");
   }
 #endif
 
   if (calc_cs(buf, 5) != 0) {
-    warn("FRU: multirecord header checksum is invalid\n");
+    fwarn("FRU: multirecord header checksum is invalid\n");
     m->header_cs_ok = false;
     return -1;
   } else {
@@ -229,35 +229,35 @@ fru_parse_multirecord(struct multirec *m, uint8_t *buf, unsigned int buf_len) {
   m->type = buf[0];
   m->format = buf[1]&0x7;
   if (m->format != 0x2) {
-    warn("FRU: multirecord format is unknown [%i]\n", m->format);
+    fwarn("FRU: multirecord format is unknown [%i]\n", m->format);
     return -2;
   }
   m->end = (buf[1]&0x80?true:false);
   if (m->end) {
-    dbg("FRU: last multirecord\n");
+    fru_dbg("FRU: last multirecord\n");
   }
   m->length = buf[2];
   if ((buf_len-5)<(m->length)) {
-    warn("FRU: no space in multirecord buffer, failed check data\n");
+    fwarn("FRU: no space in multirecord buffer, failed check data\n");
     return -5;
   }
 #ifdef FRU_DEBUG
   {
     int i = 0;
-    log("FRU mrec bin:\n");
+    flog("FRU mrec bin:\n");
     for (;i<(m->length+5);i++) {
       if ((i%8)==0) {
-        dbg("\n");
+        fru_dbg("\n");
       }
-      dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
+      fru_dbg("0x%02x[%c] ", buf[i], (buf[i]>' '?buf[i]:' '));
     }
-    dbg("\n");
+    fru_dbg("\n");
   }
 #endif
   
   data_cs = calc_cs(&buf[5], m->length)+buf[3];
   if (data_cs != 0) {
-    warn("FRU: multirecord data checksum is invalid [0x%02x]\n", data_cs);
+    fwarn("FRU: multirecord data checksum is invalid [0x%02x]\n", data_cs);
     return -3;
   }
   m->data = &buf[5];
@@ -270,18 +270,18 @@ parse_fru(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   int mrec_n = 0;
   int offt = 0;
   if (buf_len<8) {
-    warn("FRU buffer is too short\n");
+    fwarn("FRU buffer is too short\n");
     return -1;
   }
-  dbg("FRU: Checking header [0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x]\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+  fru_dbg("FRU: Checking header [0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x]\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
   if (buf[0] == 0xff) {
-    warn("FRU: Empty EEPROM detected\n");
+    fwarn("FRU: Empty EEPROM detected\n");
     return -2;
   } else if (buf[0] != FRU_VERSION) {
-    warn("FRU: Header version is not valid\n");
+    fwarn("FRU: Header version is not valid\n");
     return -3;
   } else if (calc_cs(buf, 8) != 0) {
-    warn("FRU: Bad header checksum: %i\n", calc_cs(buf, 8));
+    fwarn("FRU: Bad header checksum: %i\n", calc_cs(buf, 8));
     return -4;
   }
   f->board_area_offset = buf[3]*8;
@@ -296,12 +296,12 @@ parse_fru(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   f->mrec_count = 0;
   offt = f->mrec_area_offset;
   while (ret >= 0 && (mrec_n < N_MULTIREC)) {
-    dbg("FRU: parsing multirecord %i\n", f->mrec_count);
+    fru_dbg("FRU: parsing multirecord %i\n", f->mrec_count);
     ret = fru_parse_multirecord(&f->mrec[mrec_n], &buf[offt], buf_len-offt);
     if (ret > 0) {
       f->mrec_count ++;
     } else {
-      warn("FRU: Failed to parse multirecord\n");
+      fwarn("FRU: Failed to parse multirecord\n");
       return -7;
     }
     if (f->mrec[mrec_n].end) {
@@ -319,12 +319,12 @@ fru_mk_multirecords_area(struct fru *f, uint8_t *buf, unsigned int buf_len) {
   int i = 0;
   int ret = 0;
   unsigned int offt = 0;
-  log("Packing multirecord area\n");
+  flog("Packing multirecord area\n");
   for (;i<f->mrec_count; i++) {
-    log("Packing [%02x]\n", f->mrec[i].type);
+    flog("Packing [%02x]\n", f->mrec[i].type);
     ret = fru_mk_multirecord(buf+offt, buf_len-offt, f->mrec[i].type, (f->mrec_count-i>1?false:true), f->mrec[i].data, f->mrec[i].length);
     if (ret < 0) {
-      warn("FRU: Failed to pack multirecord\n");
+      fwarn("FRU: Failed to pack multirecord\n");
       return -1;
     }
     offt+=ret;
@@ -356,16 +356,16 @@ fru_mrec_update_bootdevice(struct fru *f, uint8_t *bootdevice) {
   len = (len>FRU_STR_MAX?FRU_STR_MAX:len);
   memset(f->bootdevice, 0, FRU_STR_MAX);
   memcpy(f->bootdevice, bootdevice, (len>FRU_STR_MAX?FRU_STR_MAX:len));
-  log("Checking if bootdev mrec already exists\n");
+  flog("Checking if bootdev mrec already exists\n");
   for (; i<f->mrec_count; i++) {
     if (f->mrec[i].type == MR_SATADEV_REC) {
-      log("Found bootdev mrec, updating\n");
+      flog("Found bootdev mrec, updating\n");
       f->mrec[i].data = f->bootdevice;
       f->mrec[i].length = len;
       return 0;
     }
   }
-  log("Bootdev mrec not found, creating mrec %i\n", f->mrec_count);
+  flog("Bootdev mrec not found, creating mrec %i\n", f->mrec_count);
   //no mrec for sata found, creating one
   struct multirec *m = &(f->mrec[f->mrec_count]);
   m->type = MR_SATADEV_REC;
@@ -384,16 +384,16 @@ fru_mrec_update_passwd_line(struct fru *f, uint8_t *passwd_line) {
   len = (len>FRU_PWD_MAX?FRU_PWD_MAX:len);
   memset(f->passwd_line, 0, FRU_PWD_MAX);
   memcpy(f->passwd_line, passwd_line, (len>FRU_PWD_MAX?FRU_PWD_MAX:len));
-  log("Checking if passwd line mrec already exists\n");
+  flog("Checking if passwd line mrec already exists\n");
   for (; i<f->mrec_count; i++) {
     if (f->mrec[i].type == MR_PASSWD_REC) {
-      log("Found passwd line mrec, updating\n");
+      flog("Found passwd line mrec, updating\n");
       f->mrec[i].data = f->passwd_line;
       f->mrec[i].length = len;
       return 0;
     }
   }
-  log("Passwd line mrec not found, creating mrec %i\n", f->mrec_count);
+  flog("Passwd line mrec not found, creating mrec %i\n", f->mrec_count);
   struct multirec *m = &(f->mrec[f->mrec_count]);
   m->type = MR_PASSWD_REC;
   m->format = 2;
@@ -408,16 +408,16 @@ int
 fru_mrec_update_test_ok(struct fru *f, uint8_t test_ok) {
   int i = 0;
   f->test_ok = test_ok;
-  log("Checking if test ok mrec already exists\n");
+  flog("Checking if test ok mrec already exists\n");
   for (; i<f->mrec_count; i++) {
     if (f->mrec[i].type == MR_TESTOK_REC) {
-      log("Found test ok mrec, updating\n");
+      flog("Found test ok mrec, updating\n");
       f->mrec[i].data = &f->test_ok;
       f->mrec[i].length = 1;
       return 0;
     }
   }
-  log("Test ok mrec not found, creating mrec %i\n", f->mrec_count);
+  flog("Test ok mrec not found, creating mrec %i\n", f->mrec_count);
   struct multirec *m = &(f->mrec[f->mrec_count]);
   m->type = MR_TESTOK_REC;
   m->format = 2;
@@ -432,25 +432,25 @@ int
 fru_mrec_update_power_policy(struct fru *f, enum POWER_POLICY pp) {
   int i = 0;
   f->power_policy = pp;
-  log("Checking if power policy mrec already exists\n");
-  log("Power policy value: %i\n", f->power_policy);
+  flog("Checking if power policy mrec already exists\n");
+  flog("Power policy value: %i\n", f->power_policy);
   for (; i<f->mrec_count; i++) {
     if (f->mrec[i].type == MR_POWER_POLICY_REC) {
-      log("Found power policy mrec, updating\n");
+      flog("Found power policy mrec, updating\n");
       f->mrec[i].data = &f->power_policy;
-      log("Updating data: %02x\n", f->mrec[i].data[0]);
+      flog("Updating data: %02x\n", f->mrec[i].data[0]);
       f->mrec[i].length = 1;
       return 0;
     }
   }
-  log("Power policy mrec not found, creating mrec %i\n", f->mrec_count);
+  flog("Power policy mrec not found, creating mrec %i\n", f->mrec_count);
   struct multirec *m = &(f->mrec[f->mrec_count]);
   m->type = MR_POWER_POLICY_REC;
   m->format = 2;
   m->end = true;
   m->length = 1;
   m->data = &f->power_policy;
-  log("Setting data: %02x\n", m->data[0]);
+  flog("Setting data: %02x\n", m->data[0]);
   f->mrec_count ++;
   return -1;
 }
@@ -459,16 +459,16 @@ int
 fru_mrec_update_power_state(struct fru *f) {
   int i = 0;
   f->power_state = 1;
-  log("Checking if power state mrec already exists\n");
+  flog("Checking if power state mrec already exists\n");
   for (; i<f->mrec_count; i++) {
     if (f->mrec[i].type == MR_POWER_STATE_REC) {
-      log("Found power policy mrec, updating\n");
+      flog("Found power policy mrec, updating\n");
       f->mrec[i].data = &f->power_state;
       f->mrec[i].length = 1;
       return 0;
     }
   }
-  log("Power policy mrec not found, creating mrec %i\n", f->mrec_count);
+  flog("Power policy mrec not found, creating mrec %i\n", f->mrec_count);
   struct multirec *m = &(f->mrec[f->mrec_count]);
   m->type = MR_POWER_STATE_REC;
   m->format = 2;
@@ -485,12 +485,12 @@ read_fru(uint8_t *fru_buf) {
   FILE *f = fopen("/sys/bus/i2c/devices/1-0053/eeprom", "r");
   int ret = 0;
   if (f == NULL) {
-    err("FRU: failed to open eeprom\n");
+    ferr("FRU: failed to open eeprom\n");
     return -1;
   }
-  dbg("Reading eeprom\n");
+  fru_dbg("Reading eeprom\n");
   ret = fread(fru_buf, sizeof(uint8_t), FRU_SIZE, f);
-  dbg("Read %i bytes\n", ret);
+  fru_dbg("Read %i bytes\n", ret);
   fclose(f);
   return 0;
 }
@@ -500,19 +500,19 @@ fru_update_mrec_eeprom(void) {
   int ret = 0;
   FILE *f = NULL;
   memcpy(fru_buf2, fru_buf, fru.mrec_area_offset);
-  dbg("Put multirecord area at %i\n", fru.mrec_area_offset);
+  fru_dbg("Put multirecord area at %i\n", fru.mrec_area_offset);
   ret = fru_mk_multirecords_area(&fru, fru_buf2+fru.mrec_area_offset, FRU_SIZE-fru.mrec_area_offset);
   if (ret < 0) {
     return -1;
   }
-  log("Writing eeprom ");
+  flog("Writing eeprom ");
   f = fopen("/sys/bus/i2c/devices/1-0053/eeprom", "w");
   if (f == NULL) {
-    err("FRU: failed to open eeprom\n");
+    ferr("FRU: failed to open eeprom\n");
     return -1;
   }
   ret = fwrite(fru_buf2, sizeof(uint8_t), FRU_SIZE, f);
-  dbg("Wrote %i bytes\n", ret);
+  fru_dbg("Wrote %i bytes\n", ret);
   fclose(f);
   return 0;
 }
@@ -521,7 +521,7 @@ int
 read_fru(uint8_t *fru_buf) {
   int ret = 0;
   int i;
-  dbg("Reading eeprom\n");
+  fru_dbg("Reading eeprom\n");
   if (i2c_set_bus_num(CONFIG_SYS_OEM_BUS_NUM)) {
 		return -1;
   }
@@ -529,7 +529,7 @@ read_fru(uint8_t *fru_buf) {
   for (i=0;i<FRU_SIZE;i+=32) {
     ret = i2c_read(CONFIG_SYS_OEM_I2C_ADDR | 1, i, 2, fru_buf+i, 32);
     if (ret != 0) {
-      err("FRU: failed to read eeprom [%i]\n", ret);
+      ferr("FRU: failed to read eeprom [%i]\n", ret);
       return -1;
     }
 
@@ -537,11 +537,11 @@ read_fru(uint8_t *fru_buf) {
     int j;
     for (j=i;j<32+i;j++) {
       if ((j%8)==0) {
-        dbg("\n");
+        fru_dbg("\n");
       }
-      dbg("%02x[%c] ", fru_buf[j], (fru_buf[j]>' '?fru_buf[j]:' '));
+      fru_dbg("%02x[%c] ", fru_buf[j], (fru_buf[j]>' '?fru_buf[j]:' '));
     }
-    dbg("\n");
+    fru_dbg("\n");
 #endif
   }
   return 0;
@@ -557,7 +557,7 @@ fru_update_mrec_eeprom(void) {
   if (ret < 0) {
     return -1;
   }
-  log("Writing eeprom ");
+  flog("Writing eeprom ");
   if (i2c_set_bus_num(CONFIG_SYS_OEM_BUS_NUM)) {
 		return -2;
   }
@@ -565,7 +565,7 @@ fru_update_mrec_eeprom(void) {
   for (i=0;i<FRU_SIZE;i+=32) {
     ret = i2c_write(CONFIG_SYS_OEM_I2C_ADDR, i, 2, fru_buf2+i, 32);
     if (ret != 0) {
-      err("FRU: failed to write eeprom [%i]\n", ret);
+      ferr("FRU: failed to write eeprom [%i]\n", ret);
       return -3;
     }
 
@@ -573,18 +573,18 @@ fru_update_mrec_eeprom(void) {
     int j;
     for (j=i;j<32+i;j++) {
       if ((j%8)==0) {
-        dbg("\n");
+        fru_dbg("\n");
       }
-      dbg("0x%02x[%c] ", fru_buf2[j], (fru_buf2[j]>' '?fru_buf2[j]:' '));
+      fru_dbg("0x%02x[%c] ", fru_buf2[j], (fru_buf2[j]>' '?fru_buf2[j]:' '));
     }
-    dbg("\n");
+    fru_dbg("\n");
 #else
-    msg(".");
+    fmsg(".");
 #endif
     udelay(5000);
 
   }
-  msg("\n");
+  fmsg("\n");
   return 0;
 }
 #endif
@@ -602,29 +602,29 @@ fru_open_parse(void) {
   for (i=0; i<fru.mrec_count; i++) {
     if (fru.mrec[i].type == MR_MAC_REC) {
       memcpy(fru.mac_data, fru.mrec[i].data, 6);
-      dbg("FRU: found MAC mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac_data[0], fru.mac_data[1], fru.mac_data[2], fru.mac_data[3], fru.mac_data[4], fru.mac_data[5]);
+      fru_dbg("FRU: found MAC mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac_data[0], fru.mac_data[1], fru.mac_data[2], fru.mac_data[3], fru.mac_data[4], fru.mac_data[5]);
     } else if (fru.mrec[i].type == MR_MAC2_REC) {
       memcpy(fru.mac_data+6, fru.mrec[i].data, 6);
-      dbg("FRU: found MAC2 mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac_data[6], fru.mac_data[7], fru.mac_data[8], fru.mac_data[9], fru.mac_data[10], fru.mac_data[11]);
+      fru_dbg("FRU: found MAC2 mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac_data[6], fru.mac_data[7], fru.mac_data[8], fru.mac_data[9], fru.mac_data[10], fru.mac_data[11]);
     } else if (fru.mrec[i].type == MR_MAC3_REC) {
       memcpy(fru.mac_data+12, fru.mrec[i].data, 6);
-      dbg("FRU: found MAC3 mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac_data[12], fru.mac_data[13], fru.mac_data[14], fru.mac_data[15], fru.mac_data[16], fru.mac_data[17]);
+      fru_dbg("FRU: found MAC3 mrec [%02x %02x %02x %02x %02x %02x]\n", fru.mac_data[12], fru.mac_data[13], fru.mac_data[14], fru.mac_data[15], fru.mac_data[16], fru.mac_data[17]);
     } else if (fru.mrec[i].type == MR_SATADEV_REC) {
       memset(fru.bootdevice, 0, FRU_STR_MAX);
       memcpy(fru.bootdevice, fru.mrec[i].data, (fru.mrec[i].length>FRU_STR_MAX?FRU_STR_MAX:fru.mrec[i].length));
-      dbg("FRU: found SATA boot device [%s]\n", fru.bootdevice);
+      fru_dbg("FRU: found SATA boot device [%s]\n", fru.bootdevice);
     } else if (fru.mrec[i].type == MR_PASSWD_REC) {
       memset(fru.passwd_line, 0, FRU_PWD_MAX);
       memcpy(fru.passwd_line, fru.mrec[i].data, (fru.mrec[i].length>FRU_PWD_MAX?FRU_PWD_MAX:fru.mrec[i].length));
-      dbg("FRU: found passwd line [%s]\n", fru.passwd_line);
+      fru_dbg("FRU: found passwd line [%s]\n", fru.passwd_line);
     } else if (fru.mrec[i].type == MR_TESTOK_REC) {
       fru.test_ok = 0;
       memcpy(&fru.test_ok, fru.mrec[i].data, 1);
-      dbg("FRU: found test ok record [0x%02x]\n", fru.test_ok);
+      fru_dbg("FRU: found test ok record [0x%02x]\n", fru.test_ok);
     } else if (fru.mrec[i].type == MR_POWER_POLICY_REC) {
       fru.power_policy = 0;
       memcpy(&fru.power_policy, fru.mrec[i].data, 1);
-      dbg("FRU: found power policy record [0x%02x]\n", fru.power_policy);
+      fru_dbg("FRU: found power policy record [0x%02x]\n", fru.power_policy);
     }
   }
   return 0;

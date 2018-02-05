@@ -2,8 +2,9 @@ TOOL=mitxfru-tool
 CROSS_COMPILE ?=
 CROSS_ROOT?=
 PREFIX ?= .
+VERSION ?=
 CC = $(CROSS_COMPILE)gcc
-CFLAGS = -Wall -I./ -I$(CROSS_ROOT)/usr/include -DRECOVERY
+CFLAGS = -Wall -I./ -I$(CROSS_ROOT)/usr/include -DRECOVERY -DVERSION="$(VERSION)"
 LDFLAGS = -L$(CROSS_ROOT)/usr/lib
 SOURCES = fru.c mitxfru-tool.c
 OBJECTS = $(patsubst %.c, %.o, $(SOURCES))
@@ -24,4 +25,4 @@ endif
 
 .PHONY: clean
 clean:
-	rm $(TOOL)
+	rm $(TOOL) $(OBJECTS)

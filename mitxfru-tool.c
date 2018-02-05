@@ -79,10 +79,11 @@ main (int argc, char **argv) {
     return 0;
   }
 
-  log("Started\n");
+  flog("Started\n");
+  flog("mitxfru-tool %s\n", xstr(VERSION));
   ret = fru_open_parse();
   if (ret != 0) {
-    err("Failed to load data from EEPROM\n");
+    ferr("Failed to load data from EEPROM\n");
     return -1;
   }
 
@@ -105,14 +106,14 @@ main (int argc, char **argv) {
   if (svalue != NULL) {
     val = strtoul(svalue, NULL, 16);
     if (dvalue == NULL) {
-      err("-d is not set, please bother yourself with reading some help\n");
+      ferr("-d is not set, please bother yourself with reading some help\n");
       return -4;
     }
     switch (val) {
     case MR_MAC_REC:
       ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", (unsigned int*)&mac[0], (unsigned int*)&mac[1], (unsigned int*)&mac[2], (unsigned int*)&mac[3], (unsigned int*)&mac[4], (unsigned int*)&mac[5]);
       if (ret<6) {
-        err("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
+        ferr("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
         return -5;
       }
       fru_mrec_update_mac(&fru, mac, 0);
@@ -126,7 +127,7 @@ main (int argc, char **argv) {
     case MR_TESTOK_REC:
       ret = sscanf(dvalue, "%i", (unsigned int *)&test_ok);
       if (ret != 1) {
-        err("Test state format not recognized\n");
+        ferr("Test state format not recognized\n");
         return -6;
       }
       fru_mrec_update_test_ok(&fru, test_ok);
@@ -134,7 +135,7 @@ main (int argc, char **argv) {
     case MR_POWER_POLICY_REC:
       ret = sscanf(dvalue, "%i", (unsigned int *)&power_policy);
       if (ret != 1) {
-        err("Power policy format not recognized\n");
+        ferr("Power policy format not recognized\n");
         return -6;
       }
       fru_mrec_update_power_policy(&fru, power_policy);
@@ -142,7 +143,7 @@ main (int argc, char **argv) {
     case MR_MAC2_REC:
       ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", (unsigned int*)&mac[0], (unsigned int*)&mac[1], (unsigned int*)&mac[2], (unsigned int*)&mac[3], (unsigned int*)&mac[4], (unsigned int*)&mac[5]);
       if (ret<6) {
-        err("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
+        ferr("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
         return -5;
       }
       fru_mrec_update_mac(&fru, mac, 1);
@@ -150,23 +151,23 @@ main (int argc, char **argv) {
     case MR_MAC3_REC:
       ret = sscanf(dvalue, "%02x:%02x:%02x:%02x:%02x:%02x", (unsigned int*)&mac[0], (unsigned int*)&mac[1], (unsigned int*)&mac[2], (unsigned int*)&mac[3], (unsigned int*)&mac[4], (unsigned int*)&mac[5]);
       if (ret<6) {
-        err("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
+        ferr("MAC format is not recognized; Example: 01:02:03:04:05:06\n");
         return -5;
       }
       fru_mrec_update_mac(&fru, mac, 2);
       break;
 
     default:
-      err("Unknown multirecord id %i\n", val);
+      ferr("Unknown multirecord id %i\n", val);
       return -3;
       break;
     }
-    log("Updating multirecord\n");
+    flog("Updating multirecord\n");
     fru_update_mrec_eeprom();
-    log("Saving data to EEPROM\n");
+    flog("Saving data to EEPROM\n");
     for (i=0;i<10;i++) {
       sleep(1);
-      msg(".");
+      fmsg(".");
       fflush(stdout);
     }
     sync();
@@ -196,7 +197,7 @@ main (int argc, char **argv) {
       printf("%02x:%02x:%02x:%02x:%02x:%02x\n", fru.mac_data[12], fru.mac_data[13], fru.mac_data[14], fru.mac_data[15], fru.mac_data[16], fru.mac_data[17]);
       break;
     default:
-      err("Unknown multirecord id %i\n", val);
+      ferr("Unknown multirecord id %i\n", val);
       return -2;
       break;
     }
