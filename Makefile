@@ -2,14 +2,17 @@ TOOL=mitxfru-tool
 CROSS_COMPILE ?=
 CROSS_ROOT?=
 PREFIX ?= .
-VERSION ?=
+VERSION = $(shell python gsuf/gsuf.py --main-branch master)
 CC = $(CROSS_COMPILE)gcc
 CFLAGS = -Wall -I./ -I$(CROSS_ROOT)/usr/include -DRECOVERY -DVERSION="$(VERSION)"
 LDFLAGS = -L$(CROSS_ROOT)/usr/lib
 SOURCES = fru.c mitxfru-tool.c
 OBJECTS = $(patsubst %.c, %.o, $(SOURCES))
 
-all: $(TOOL)
+all: prepare $(TOOL)
+
+prepare:
+	if [ ! -e gsuf ]; then git clone https://github.com/snegovick/gsuf.git; fi
 
 $(TOOL): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
