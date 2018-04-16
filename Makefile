@@ -2,8 +2,9 @@ TOOL=mitxfru-tool
 CROSS_COMPILE ?=
 CROSS_ROOT?=
 PREFIX ?= .
+BRANCH?=master
 GSUF_PATH ?= $(shell pwd)/gsuf/
-VERSION = $(shell python $(GSUF_PATH)/gsuf.py --main-branch master)
+VERSION = $(shell python $(GSUF_PATH)/gsuf.py --main-branch $(BRANCH))
 CC = $(CROSS_COMPILE)gcc
 CFLAGS = -Wall -I./ -I$(CROSS_ROOT)/usr/include -DRECOVERY -DVERSION="$(VERSION)"
 LDFLAGS = -L$(CROSS_ROOT)/usr/lib
